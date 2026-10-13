@@ -1,1 +1,1406 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/dream14696/SCripts/refs/heads/main/Etdlslnbs"))()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local GuiService = game:GetService("GuiService")
+local CollectionService = game:GetService("CollectionService")
+
+local Player = Players.LocalPlayer
+
+if _G.AdminObjetosCleanup then
+	pcall(_G.AdminObjetosCleanup)
+	_G.AdminObjetosCleanup = nil
+end
+
+local BLUE = Color3.fromRGB(0, 125, 255)
+local CYAN = Color3.fromRGB(0, 200, 255)
+local BG = Color3.fromRGB(6, 10, 18)
+local PANEL = Color3.fromRGB(10, 17, 28)
+local OFFCOLOR = Color3.fromRGB(40, 45, 55)
+local WHITE = Color3.new(1, 1, 1)
+local DIM = Color3.fromRGB(130, 145, 170)
+
+local connections = {}
+local function track(conn)
+	table.insert(connections, conn)
+	return conn
+end
+
+local function new(class, props, parent)
+	local o = Instance.new(class)
+	for k, v in pairs(props) do o[k] = v end
+	if parent then o.Parent = parent end
+	return o
+end
+
+local function corner(o, r)
+	return new("UICorner", { CornerRadius = UDim.new(0, r) }, o)
+end
+
+local function stroke(o, color, thickness)
+	return new("UIStroke", { Color = color, Thickness = thickness, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, o)
+end
+
+local function getContainer()
+	local ok, h = pcall(function() return gethui and gethui() end)
+	if ok and h then return h end
+	local ok2, cg = pcall(function() return game:GetService("CoreGui") end)
+	if ok2 and cg then
+		local probe = Instance.new("Folder")
+		local writable = pcall(function() probe.Parent = cg end)
+		probe:Destroy()
+		if writable then return cg end
+	end
+	return Player:WaitForChild("PlayerGui")
+end
+
+local Root = new("ScreenGui", {
+	Name = "AdminObjetos",
+	ResetOnSpawn = false,
+	IgnoreGuiInset = true,
+	DisplayOrder = 2147483647,
+	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+})
+pcall(function() if syn and syn.protect_gui then syn.protect_gui(Root) end end)
+Root.Parent = getContainer()
+
+local Camera = workspace.CurrentCamera
+
+--------------------------------------------------
+-- VENTANA PRINCIPAL
+--------------------------------------------------
+
+local MIN_W, MIN_H = 330, 340
+local viewport = Camera.ViewportSize
+local startW = math.min(380, viewport.X - 20)
+local startH = math.min(440, viewport.Y - 20)
+
+local Main = new("Frame", {
+	Name = "Main",
+	Size = UDim2.fromOffset(startW, startH),
+	Position = UDim2.fromOffset(math.floor((viewport.X - startW) / 2), math.floor((viewport.Y - startH) / 2)),
+	BackgroundColor3 = BG,
+	BackgroundTransparency = 0.04,
+	BorderSizePixel = 0,
+	Active = true,
+	ZIndex = 2,
+}, Root)
+corner(Main, 12)
+stroke(Main, BLUE, 2)
+
+local TopBar = new("Frame", {
+	Size = UDim2.new(1, 0, 0, 38),
+	BackgroundTransparency = 1,
+	Active = true,
+	ZIndex = 3,
+}, Main)
+
+new("TextLabel", {
+	BackgroundTransparency = 1,
+	Position = UDim2.fromOffset(12, 0),
+	Size = UDim2.new(1, -56, 1, 0),
+	Text = "Administrador de objetos",
+	Font = Enum.Font.GothamBold,
+	TextSize = 15,
+	TextColor3 = WHITE,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	ZIndex = 4,
+}, TopBar)
+
+local CloseBtn = new("TextButton", {
+	Size = UDim2.fromOffset(30, 26),
+	Position = UDim2.new(1, -38, 0, 6),
+	BackgroundColor3 = Color3.fromRGB(70, 20, 28),
+	Text = "✕",
+	Font = Enum.Font.GothamBold,
+	TextSize = 13,
+	TextColor3 = WHITE,
+	AutoButtonColor = true,
+	ZIndex = 5,
+}, TopBar)
+corner(CloseBtn, 7)
+
+new("Frame", {
+	Size = UDim2.new(1, -16, 0, 1),
+	Position = UDim2.fromOffset(8, 38),
+	BackgroundColor3 = BLUE,
+	BackgroundTransparency = 0.4,
+	BorderSizePixel = 0,
+	ZIndex = 3,
+}, Main)
+
+--------------------------------------------------
+-- PALANCAS (se excluyen entre sí)
+--------------------------------------------------
+
+local function makeLever(y, title, desc, onClick)
+	local row = new("Frame", {
+		Size = UDim2.new(1, -16, 0, 46),
+		Position = UDim2.new(0, 8, 0, y),
+		BackgroundColor3 = PANEL,
+		BackgroundTransparency = 0.15,
+		ZIndex = 3,
+	}, Main)
+	corner(row, 9)
+	stroke(row, Color3.fromRGB(0, 95, 220), 1)
+
+	local titleLabel = new("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(10, 5),
+		Size = UDim2.new(1, -72, 0, 18),
+		Text = title,
+		Font = Enum.Font.GothamBold,
+		TextSize = 12,
+		TextColor3 = WHITE,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		ZIndex = 4,
+	}, row)
+
+	new("TextLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(10, 23),
+		Size = UDim2.new(1, -72, 0, 16),
+		Text = desc,
+		Font = Enum.Font.Gotham,
+		TextSize = 10,
+		TextColor3 = DIM,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		ZIndex = 4,
+	}, row)
+
+	local track = new("Frame", {
+		Size = UDim2.fromOffset(46, 24),
+		Position = UDim2.new(1, -56, 0.5, -12),
+		BackgroundColor3 = OFFCOLOR,
+		ZIndex = 4,
+	}, row)
+	corner(track, 12)
+	stroke(track, BLUE, 1)
+
+	local knob = new("Frame", {
+		Size = UDim2.fromOffset(18, 18),
+		Position = UDim2.new(0, 3, 0.5, -9),
+		BackgroundColor3 = WHITE,
+		ZIndex = 5,
+	}, track)
+	corner(knob, 9)
+
+	local btn = new("TextButton", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Text = "",
+		ZIndex = 6,
+	}, row)
+
+	local state = false
+	local function set(v)
+		state = v
+		local info = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		TweenService:Create(track, info, { BackgroundColor3 = v and Color3.fromRGB(0, 150, 255) or OFFCOLOR }):Play()
+		TweenService:Create(knob, info, { Position = v and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9) }):Play()
+		titleLabel.TextColor3 = v and Color3.fromRGB(0, 220, 255) or WHITE
+	end
+
+	track.Parent = row
+	btn.MouseButton1Click:Connect(function() onClick(state) end)
+
+	return { set = set }
+end
+
+local mode = nil
+local leverGui, leverObj
+local clearSelection, updateStatus
+
+local function setMode(m)
+	mode = m
+	leverGui.set(m == "gui")
+	leverObj.set(m == "obj")
+	clearSelection()
+	updateStatus()
+end
+
+leverGui = makeLever(46, "Ver: menús e interfaces de la pantalla", "Seleccionar interfaces de la pantalla", function(isOn)
+	setMode(isOn and nil or "gui")
+end)
+
+leverObj = makeLever(96, "Solo ver objetos de la experiencia", "Seleccionar partes y modelos del mundo", function(isOn)
+	setMode(isOn and nil or "obj")
+end)
+
+--------------------------------------------------
+-- CABECERA DE LA CONSOLA
+--------------------------------------------------
+
+local ConsoleHeader = new("Frame", {
+	Size = UDim2.new(1, -16, 0, 26),
+	Position = UDim2.fromOffset(8, 148),
+	BackgroundTransparency = 1,
+	ZIndex = 3,
+}, Main)
+
+new("TextLabel", {
+	BackgroundTransparency = 1,
+	Size = UDim2.fromOffset(70, 26),
+	Text = "Consola",
+	Font = Enum.Font.GothamBold,
+	TextSize = 12,
+	TextColor3 = Color3.fromRGB(0, 170, 255),
+	TextXAlignment = Enum.TextXAlignment.Left,
+	ZIndex = 4,
+}, ConsoleHeader)
+
+local HeaderButtons = new("Frame", {
+	Size = UDim2.new(1, -70, 1, 0),
+	Position = UDim2.fromOffset(70, 0),
+	BackgroundTransparency = 1,
+	ZIndex = 3,
+}, ConsoleHeader)
+new("UIListLayout", {
+	FillDirection = Enum.FillDirection.Horizontal,
+	HorizontalAlignment = Enum.HorizontalAlignment.Right,
+	VerticalAlignment = Enum.VerticalAlignment.Center,
+	Padding = UDim.new(0, 4),
+	SortOrder = Enum.SortOrder.LayoutOrder,
+}, HeaderButtons)
+
+local function headerButton(text, width, order)
+	local b = new("TextButton", {
+		Size = UDim2.fromOffset(width, 22),
+		BackgroundColor3 = Color3.fromRGB(8, 25, 45),
+		Text = text,
+		Font = Enum.Font.GothamBold,
+		TextSize = 10,
+		TextColor3 = WHITE,
+		LayoutOrder = order,
+		ZIndex = 4,
+	}, HeaderButtons)
+	corner(b, 6)
+	stroke(b, Color3.fromRGB(0, 130, 255), 1)
+	return b
+end
+
+local HistoryBtn = headerButton("Historial (0)", 86, 1)
+local RestoreBtn = headerButton("Restaurar", 70, 2)
+local ClearBtn = headerButton("Limpiar", 60, 3)
+
+--------------------------------------------------
+-- CONSOLA CON NÚMEROS DE LÍNEA E HISTORIAL
+--------------------------------------------------
+
+local ConsoleFrame = new("Frame", {
+	Position = UDim2.fromOffset(8, 176),
+	Size = UDim2.new(1, -16, 1, -176 - 36),
+	BackgroundColor3 = Color3.fromRGB(4, 6, 12),
+	ZIndex = 3,
+}, Main)
+corner(ConsoleFrame, 8)
+stroke(ConsoleFrame, Color3.fromRGB(0, 90, 190), 1)
+
+local function makeScroll()
+	local s = new("ScrollingFrame", {
+		Position = UDim2.fromOffset(4, 4),
+		Size = UDim2.new(1, -8, 1, -8),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = BLUE,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		ZIndex = 4,
+	}, ConsoleFrame)
+	new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 0) }, s)
+	return s
+end
+
+local ConsoleScroll = makeScroll()
+local HistoryScroll = makeScroll()
+HistoryScroll.Visible = false
+
+local function esc(s)
+	s = tostring(s)
+	s = s:gsub("&", "&amp;")
+	s = s:gsub("<", "&lt;")
+	s = s:gsub(">", "&gt;")
+	return s
+end
+
+local function clearRows(scroll)
+	for _, c in ipairs(scroll:GetChildren()) do
+		if not c:IsA("UIListLayout") then c:Destroy() end
+	end
+end
+
+local function renderLines(lines)
+	clearRows(ConsoleScroll)
+	for i, line in ipairs(lines) do
+		local row = new("Frame", {
+			Size = UDim2.new(1, 0, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundColor3 = line.h and Color3.fromRGB(0, 70, 150) or Color3.fromRGB(20, 30, 48),
+			BackgroundTransparency = line.h and 0.7 or (i % 2 == 0 and 0.88 or 1),
+			BorderSizePixel = 0,
+			LayoutOrder = i,
+			ZIndex = 5,
+		}, ConsoleScroll)
+
+		new("TextLabel", {
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(0, 1),
+			Size = UDim2.fromOffset(30, 16),
+			Text = tostring(i),
+			Font = Enum.Font.Code,
+			TextSize = 11,
+			TextColor3 = Color3.fromRGB(90, 115, 150),
+			TextXAlignment = Enum.TextXAlignment.Right,
+			ZIndex = 6,
+		}, row)
+
+		new("Frame", {
+			Position = UDim2.fromOffset(35, 0),
+			Size = UDim2.new(0, 1, 1, 0),
+			BackgroundColor3 = BLUE,
+			BackgroundTransparency = 0.5,
+			BorderSizePixel = 0,
+			ZIndex = 6,
+		}, row)
+
+		local text
+		if line.h then
+			text = '<b><font color="#4db2ff">── ' .. esc(line.h) .. " ──</font></b>"
+		elseif line.k then
+			text = '<font color="#7fb8ff">' .. esc(line.k) .. '</font><font color="#7a8599"> : </font>' .. esc(line.v)
+		else
+			text = '<font color="#8a93a5">' .. esc(line.t or "") .. "</font>"
+		end
+
+		new("TextLabel", {
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(42, 1),
+			Size = UDim2.new(1, -46, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Text = text,
+			RichText = true,
+			Font = Enum.Font.Code,
+			TextSize = 12,
+			TextColor3 = Color3.fromRGB(225, 232, 245),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			TextWrapped = true,
+			ZIndex = 6,
+		}, row)
+
+		new("UIPadding", { PaddingBottom = UDim.new(0, 2) }, row)
+	end
+	ConsoleScroll.CanvasPosition = Vector2.zero
+end
+
+local history = {}
+local current = nil
+
+local function welcomeLines()
+	return {
+		{ h = "Administrador de objetos" },
+		{ t = "1) Activa una palanca: interfaces u objetos." },
+		{ t = "2) Toca algo en la pantalla para seleccionarlo." },
+		{ t = "3) Toca los 3 puntos verticales que aparecen encima." },
+		{ t = "4) Elige: hacer invisible o ver información." },
+		{ t = "La información del objeto aparece aquí." },
+		{ t = "Los objetos anteriores se guardan en Historial." },
+	}
+end
+
+local function showView(view)
+	ConsoleScroll.Visible = view == "console"
+	HistoryScroll.Visible = view == "history"
+end
+
+local function refreshHistoryButton()
+	HistoryBtn.Text = "Historial (" .. #history .. ")"
+end
+
+local function renderHistory()
+	clearRows(HistoryScroll)
+	if #history == 0 then
+		new("TextLabel", {
+			Size = UDim2.new(1, 0, 0, 40),
+			BackgroundTransparency = 1,
+			Text = "El historial está vacío.",
+			Font = Enum.Font.Gotham,
+			TextSize = 11,
+			TextColor3 = DIM,
+			ZIndex = 5,
+		}, HistoryScroll)
+		return
+	end
+	for i, entry in ipairs(history) do
+		local b = new("TextButton", {
+			Size = UDim2.new(1, 0, 0, 30),
+			BackgroundColor3 = Color3.fromRGB(12, 22, 38),
+			BackgroundTransparency = i % 2 == 0 and 0.2 or 0.5,
+			BorderSizePixel = 0,
+			Text = "  " .. i .. ".  [" .. entry.time .. "]  " .. entry.title,
+			Font = Enum.Font.Code,
+			TextSize = 11,
+			TextColor3 = Color3.fromRGB(180, 210, 255),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			LayoutOrder = i,
+			ZIndex = 5,
+		}, HistoryScroll)
+		b.MouseButton1Click:Connect(function()
+			if current and current.kind == "info" and not current.saved then
+				current.saved = true
+				table.insert(history, 1, current)
+				refreshHistoryButton()
+			end
+			current = entry
+			renderLines(entry.lines)
+			showView("console")
+		end)
+	end
+end
+
+local function setCurrent(entry)
+	if current and current.kind == "info" and not current.saved and current ~= entry then
+		current.saved = true
+		table.insert(history, 1, current)
+		if #history > 100 then table.remove(history) end
+		refreshHistoryButton()
+	end
+	current = entry
+	renderLines(entry.lines)
+	showView("console")
+end
+
+HistoryBtn.MouseButton1Click:Connect(function()
+	if HistoryScroll.Visible then
+		showView("console")
+	else
+		renderHistory()
+		showView("history")
+	end
+end)
+
+--------------------------------------------------
+-- PIE (arrastre inferior + botón de tamaño)
+--------------------------------------------------
+
+local Footer = new("Frame", {
+	Size = UDim2.new(1, 0, 0, 30),
+	Position = UDim2.new(0, 0, 1, -30),
+	BackgroundTransparency = 1,
+	Active = true,
+	ZIndex = 3,
+}, Main)
+
+new("Frame", {
+	Size = UDim2.new(1, -16, 0, 1),
+	Position = UDim2.fromOffset(8, 0),
+	BackgroundColor3 = BLUE,
+	BackgroundTransparency = 0.4,
+	BorderSizePixel = 0,
+	ZIndex = 3,
+}, Footer)
+
+local StatusLabel = new("TextLabel", {
+	BackgroundTransparency = 1,
+	Position = UDim2.fromOffset(12, 0),
+	Size = UDim2.new(1, -50, 1, 0),
+	Text = "",
+	Font = Enum.Font.Gotham,
+	TextSize = 10,
+	TextColor3 = DIM,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextTruncate = Enum.TextTruncate.AtEnd,
+	ZIndex = 4,
+}, Footer)
+
+local Grip = new("TextButton", {
+	Name = "Resize",
+	Size = UDim2.fromOffset(28, 28),
+	AnchorPoint = Vector2.new(1, 1),
+	Position = UDim2.new(1, -3, 1, -3),
+	BackgroundColor3 = Color3.fromRGB(8, 25, 45),
+	Text = "",
+	AutoButtonColor = true,
+	ZIndex = 6,
+}, Main)
+corner(Grip, 7)
+stroke(Grip, Color3.fromRGB(0, 130, 255), 1)
+
+for i, len in ipairs({ 6, 12, 18 }) do
+	local c = 24 - (i - 1) * 4.5
+	new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.fromOffset(len, 2),
+		Position = UDim2.fromOffset(c - 3, c - 3),
+		Rotation = -45,
+		BackgroundColor3 = Color3.fromRGB(0, 190, 255),
+		BorderSizePixel = 0,
+		ZIndex = 7,
+	}, Grip)
+end
+
+--------------------------------------------------
+-- ARRASTRAR (barra de arriba y de abajo) / REDIMENSIONAR
+--------------------------------------------------
+
+local dragging, dragStart, startPos
+local resizing, resizeStart, startSize
+
+local function isPointer(input)
+	return input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch
+end
+
+local function beginDrag(handle)
+	track(handle.InputBegan:Connect(function(input)
+		if isPointer(input) then
+			dragging = true
+			dragStart = input.Position
+			startPos = Main.Position
+			local c
+			c = input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+					c:Disconnect()
+				end
+			end)
+		end
+	end))
+end
+beginDrag(TopBar)
+beginDrag(Footer)
+
+track(Grip.InputBegan:Connect(function(input)
+	if isPointer(input) then
+		resizing = true
+		resizeStart = input.Position
+		startSize = Main.AbsoluteSize
+		local c
+		c = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				resizing = false
+				c:Disconnect()
+			end
+		end)
+	end
+end))
+
+track(UserInputService.InputChanged:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	local vp = (workspace.CurrentCamera or Camera).ViewportSize
+	if dragging then
+		local d = input.Position - dragStart
+		local x = startPos.X.Offset + d.X
+		local y = startPos.Y.Offset + d.Y
+		local w = Main.AbsoluteSize.X
+		x = math.clamp(x, -(w - 80), vp.X - 80)
+		y = math.clamp(y, 0, vp.Y - 40)
+		Main.Position = UDim2.fromOffset(x, y)
+	elseif resizing then
+		local d = input.Position - resizeStart
+		local w = math.clamp(startSize.X + d.X, MIN_W, math.max(MIN_W, vp.X))
+		local h = math.clamp(startSize.Y + d.Y, MIN_H, math.max(MIN_H, vp.Y))
+		Main.Size = UDim2.fromOffset(w, h)
+	end
+end))
+
+--------------------------------------------------
+-- CAPA SUPERIOR: ESP, 3 PUNTOS Y MENÚ EMERGENTE
+--------------------------------------------------
+
+local Overlay = new("Frame", {
+	Name = "Overlay",
+	Size = UDim2.fromScale(1, 1),
+	BackgroundTransparency = 1,
+	Active = false,
+	ZIndex = 20,
+}, Root)
+
+local EspBox = new("Frame", {
+	Visible = false,
+	BackgroundColor3 = Color3.fromRGB(0, 170, 255),
+	BackgroundTransparency = 0.82,
+	BorderSizePixel = 0,
+	Active = false,
+	ZIndex = 21,
+}, Overlay)
+stroke(EspBox, CYAN, 2)
+
+local Highlight3D = new("Highlight", {
+	FillColor = Color3.fromRGB(0, 150, 255),
+	FillTransparency = 0.7,
+	OutlineColor = CYAN,
+	OutlineTransparency = 0,
+	DepthMode = Enum.HighlightDepthMode.AlwaysOnTop,
+}, Root)
+
+local Dots = new("TextButton", {
+	Visible = false,
+	Size = UDim2.fromOffset(30, 46),
+	AnchorPoint = Vector2.new(0.5, 1),
+	BackgroundColor3 = Color3.fromRGB(6, 12, 24),
+	BackgroundTransparency = 0.05,
+	Text = "",
+	AutoButtonColor = true,
+	ZIndex = 25,
+}, Overlay)
+corner(Dots, 15)
+stroke(Dots, BLUE, 2)
+
+for i = 1, 3 do
+	local d = new("Frame", {
+		Size = UDim2.fromOffset(6, 6),
+		Position = UDim2.new(0.5, -3, 0, 7 + (i - 1) * 13),
+		BackgroundColor3 = WHITE,
+		BorderSizePixel = 0,
+		Active = false,
+		ZIndex = 26,
+	}, Dots)
+	corner(d, 3)
+end
+
+local NameLabel = new("TextLabel", {
+	Visible = false,
+	AnchorPoint = Vector2.new(0, 1),
+	AutomaticSize = Enum.AutomaticSize.XY,
+	BackgroundColor3 = Color3.fromRGB(6, 12, 24),
+	BackgroundTransparency = 0.25,
+	Text = "",
+	Font = Enum.Font.GothamBold,
+	TextSize = 11,
+	TextColor3 = Color3.fromRGB(150, 215, 255),
+	Active = false,
+	ZIndex = 25,
+}, Overlay)
+corner(NameLabel, 6)
+new("UIPadding", {
+	PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6),
+	PaddingTop = UDim.new(0, 3), PaddingBottom = UDim.new(0, 3),
+}, NameLabel)
+
+local Popup = new("Frame", {
+	Visible = false,
+	Size = UDim2.fromOffset(210, 92),
+	AnchorPoint = Vector2.new(0.5, 0),
+	BackgroundColor3 = Color3.fromRGB(6, 10, 18),
+	Active = true,
+	ZIndex = 30,
+}, Overlay)
+corner(Popup, 10)
+stroke(Popup, BLUE, 2)
+
+local function popupButton(y, text)
+	local b = new("TextButton", {
+		Size = UDim2.new(1, -16, 0, 34),
+		Position = UDim2.fromOffset(8, y),
+		BackgroundColor3 = Color3.fromRGB(8, 25, 45),
+		Text = text,
+		Font = Enum.Font.GothamBold,
+		TextSize = 11,
+		TextColor3 = WHITE,
+		ZIndex = 31,
+	}, Popup)
+	corner(b, 8)
+	stroke(b, Color3.fromRGB(0, 130, 255), 1)
+	return b
+end
+
+local HideBtn = popupButton(8, "🚫 Hacer invisible / ignorar")
+local InfoBtn = popupButton(50, "ℹ Ver información del objeto")
+
+--------------------------------------------------
+-- OCULTAR / RESTAURAR OBJETOS
+--------------------------------------------------
+
+local hidden = {}
+
+local function hiddenCount()
+	local n = 0
+	for _ in pairs(hidden) do n = n + 1 end
+	return n
+end
+
+local function setProp(records, inst, prop, value)
+	local ok, old = pcall(function() return inst[prop] end)
+	if ok then
+		table.insert(records, { inst, prop, old })
+		pcall(function() inst[prop] = value end)
+	end
+end
+
+local function hideObject(obj)
+	if hidden[obj] then return true end
+	local rec = {}
+
+	if obj:IsA("Terrain") then
+		return false, "El terreno no se puede ocultar."
+	elseif obj:IsA("BasePart") then
+		setProp(rec, obj, "Transparency", 1)
+		setProp(rec, obj, "CanCollide", false)
+		setProp(rec, obj, "CanTouch", false)
+		for _, d in ipairs(obj:GetDescendants()) do
+			if d:IsA("Decal") or d:IsA("Texture") then
+				setProp(rec, d, "Transparency", 1)
+			elseif d:IsA("SurfaceGui") or d:IsA("ParticleEmitter") or d:IsA("Beam") or d:IsA("Trail")
+				or d:IsA("Fire") or d:IsA("Smoke") or d:IsA("Sparkles") or d:IsA("Light") then
+				setProp(rec, d, "Enabled", false)
+			end
+		end
+	elseif obj:IsA("GuiObject") then
+		setProp(rec, obj, "Visible", false)
+	else
+		return false, "Este tipo de objeto no se puede ocultar."
+	end
+
+	hidden[obj] = rec
+	return true
+end
+
+local function showObject(obj)
+	local rec = hidden[obj]
+	if not rec then return end
+	for i = #rec, 1, -1 do
+		local r = rec[i]
+		pcall(function() r[1][r[2]] = r[3] end)
+	end
+	hidden[obj] = nil
+end
+
+local function restoreAll()
+	local list = {}
+	for obj in pairs(hidden) do table.insert(list, obj) end
+	for _, obj in ipairs(list) do showObject(obj) end
+end
+
+--------------------------------------------------
+-- RECOLECCIÓN DE INFORMACIÓN
+--------------------------------------------------
+
+local function r(n, d)
+	local m = 10 ^ (d or 2)
+	return math.floor(n * m + 0.5) / m
+end
+
+local function fmt(v)
+	local t = typeof(v)
+	if t == "nil" then return "nil"
+	elseif t == "boolean" then return v and "Sí" or "No"
+	elseif t == "number" then return tostring(r(v, 3))
+	elseif t == "string" then
+		if v == "" then return "(vacío)" end
+		if #v > 140 then v = v:sub(1, 140) .. "…" end
+		return v
+	elseif t == "Vector3" then return string.format("%.2f, %.2f, %.2f", v.X, v.Y, v.Z)
+	elseif t == "Vector2" then return string.format("%.2f, %.2f", v.X, v.Y)
+	elseif t == "CFrame" then
+		local rx, ry, rz = v:ToOrientation()
+		return string.format("pos(%.2f, %.2f, %.2f) rot(%.1f°, %.1f°, %.1f°)", v.X, v.Y, v.Z, math.deg(rx), math.deg(ry), math.deg(rz))
+	elseif t == "Color3" then
+		return string.format("RGB(%d, %d, %d)  #%s", math.floor(v.R * 255 + 0.5), math.floor(v.G * 255 + 0.5), math.floor(v.B * 255 + 0.5), v:ToHex())
+	elseif t == "BrickColor" then return v.Name
+	elseif t == "UDim2" then return string.format("{%.2f, %d}, {%.2f, %d}", v.X.Scale, math.floor(v.X.Offset), v.Y.Scale, math.floor(v.Y.Offset))
+	elseif t == "UDim" then return string.format("{%.2f, %d}", v.Scale, math.floor(v.Offset))
+	elseif t == "EnumItem" then return (tostring(v):gsub("^Enum%.", ""))
+	elseif t == "Instance" then return v.Name .. " [" .. v.ClassName .. "]"
+	elseif t == "NumberRange" then return v.Min .. " - " .. v.Max
+	else return tostring(v) end
+end
+
+local function describe(inst)
+	if not inst then return "nil" end
+	return inst.Name .. " [" .. inst.ClassName .. "]"
+end
+
+local function collectInfo(obj, s)
+	local L = {}
+	local function H(t) L[#L + 1] = { h = t } end
+	local function K(k, v) L[#L + 1] = { k = tostring(k), v = fmt(v) } end
+	local function P(label, prop)
+		local ok, v = pcall(function() return obj[prop] end)
+		if ok then K(label, v) end
+	end
+	local function safe(fn, default)
+		local ok, v = pcall(fn)
+		if ok then return v end
+		return default
+	end
+
+	H("General")
+	K("Nombre", obj.Name)
+	K("Clase (tipo)", obj.ClassName)
+	K("Ruta completa", safe(function() return obj:GetFullName() end, "?"))
+	K("Padre", describe(obj.Parent))
+	K("Padre del padre", describe(obj.Parent and obj.Parent.Parent))
+	K("Contenedor raíz", safe(function()
+		local a = obj
+		while a.Parent and a.Parent ~= game do a = a.Parent end
+		return describe(a)
+	end, "?"))
+	K("Profundidad en el árbol", safe(function()
+		local n, a = 0, obj
+		while a.Parent do n = n + 1 a = a.Parent end
+		return n
+	end, "?"))
+	K("Hijos directos", #obj:GetChildren())
+	K("Descendientes totales", safe(function() return #obj:GetDescendants() end, "?"))
+	K("Hermanos (mismo padre)", safe(function() return #obj.Parent:GetChildren() - 1 end, "?"))
+	K("Archivable", obj.Archivable)
+	K("ID de depuración", safe(function() return obj:GetDebugId() end, "no disponible"))
+	K("Es BasePart", obj:IsA("BasePart"))
+	K("Es Model", obj:IsA("Model"))
+	K("Es GuiObject", obj:IsA("GuiObject"))
+
+	H("Modificaciones (desde que lo seleccionaste)")
+	K("Seleccionado el", s.selectedAt)
+	K("Fecha de la última modificación", s.lastTime or "sin cambios detectados")
+	K("Nombre de la última modificación", s.lastName or "ninguna")
+	K("Modificaciones detectadas", s.count)
+
+	H("Etiquetas y atributos")
+	local tags = safe(function() return CollectionService:GetTags(obj) end, {})
+	K("Etiquetas (tags)", #tags > 0 and table.concat(tags, ", ") or "ninguna")
+	local attrs = safe(function() return obj:GetAttributes() end, {})
+	local ac = 0
+	for name, value in pairs(attrs) do
+		ac = ac + 1
+		K("Atributo " .. name, value)
+	end
+	if ac == 0 then K("Atributos", "ninguno") end
+
+	if obj:IsA("BasePart") then
+		H("Posición y física")
+		P("Posición", "Position")
+		P("Orientación (°)", "Orientation")
+		P("Tamaño", "Size")
+		K("Volumen aproximado", r(obj.Size.X * obj.Size.Y * obj.Size.Z))
+		P("CFrame", "CFrame")
+		P("Anclado", "Anchored")
+		P("CanCollide (colisión)", "CanCollide")
+		P("CanTouch", "CanTouch")
+		P("CanQuery", "CanQuery")
+		P("Masa", "Mass")
+		P("Massless", "Massless")
+		P("Velocidad lineal", "AssemblyLinearVelocity")
+		P("Velocidad angular", "AssemblyAngularVelocity")
+		P("Grupo de colisión", "CollisionGroup")
+		P("Propiedades físicas", "CustomPhysicalProperties")
+		if not obj.Anchored then
+			K("Dueño de red", safe(function()
+				local o = obj:GetNetworkOwner()
+				return o and o.Name or "Servidor"
+			end, "?"))
+		end
+		K("Distancia a tu personaje", safe(function()
+			local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+			return hrp and (hrp.Position - obj.Position).Magnitude or "?"
+		end, "?"))
+		K("Piezas unidas (assembly)", safe(function() return #obj:GetConnectedParts(true) end, "?"))
+
+		H("Apariencia")
+		P("Color", "Color")
+		P("BrickColor", "BrickColor")
+		P("Material", "Material")
+		P("Variante de material", "MaterialVariant")
+		P("Transparencia", "Transparency")
+		P("Reflectancia", "Reflectance")
+		P("Proyecta sombra", "CastShadow")
+		P("Bloqueado (Locked)", "Locked")
+		if obj:IsA("Part") then P("Forma", "Shape") end
+		if obj:IsA("MeshPart") then
+			P("MeshId", "MeshId")
+			P("TextureID", "TextureID")
+			P("Fidelidad de render", "RenderFidelity")
+			P("Fidelidad de colisión", "CollisionFidelity")
+		end
+		if obj:IsA("UnionOperation") then
+			P("Usa color de la pieza", "UsePartColor")
+			P("Fidelidad de colisión", "CollisionFidelity")
+		end
+		if obj:IsA("SpawnLocation") then
+			P("Neutral", "Neutral")
+			P("Duración", "Duration")
+		end
+		if obj:IsA("Seat") or obj:IsA("VehicleSeat") then
+			P("Ocupante", "Occupant")
+			P("Desactivado", "Disabled")
+		end
+	end
+
+	if obj:IsA("Model") then
+		H("Modelo")
+		P("Parte principal", "PrimaryPart")
+		P("Pivote del mundo", "WorldPivot")
+		P("Modo de streaming", "ModelStreamingMode")
+		local ok, cf, size = pcall(function() return obj:GetBoundingBox() end)
+		if ok then
+			K("Centro del modelo", cf.Position)
+			K("Tamaño del modelo", size)
+		end
+		K("Partes dentro", safe(function()
+			local n = 0
+			for _, d in ipairs(obj:GetDescendants()) do if d:IsA("BasePart") then n = n + 1 end end
+			return n
+		end, "?"))
+	end
+
+	if obj:IsA("GuiObject") then
+		H("Interfaz (GuiObject)")
+		P("Visible", "Visible")
+		P("Posición (UDim2)", "Position")
+		P("Tamaño (UDim2)", "Size")
+		P("Posición en pantalla", "AbsolutePosition")
+		P("Tamaño en pantalla", "AbsoluteSize")
+		P("Rotación", "Rotation")
+		P("Punto de anclaje", "AnchorPoint")
+		P("ZIndex", "ZIndex")
+		P("Orden en el layout", "LayoutOrder")
+		P("Activo (Active)", "Active")
+		P("Seleccionable", "Selectable")
+		P("Recorta hijos", "ClipsDescendants")
+		P("Tamaño automático", "AutomaticSize")
+		P("Restricción de tamaño", "SizeConstraint")
+		P("Color de fondo", "BackgroundColor3")
+		P("Transparencia de fondo", "BackgroundTransparency")
+		P("Grosor del borde", "BorderSizePixel")
+		K("ScreenGui contenedor", safe(function()
+			local g = obj:FindFirstAncestorOfClass("ScreenGui")
+			return g and describe(g) or "ninguno"
+		end, "?"))
+		if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+			P("Texto", "Text")
+			P("Fuente", "Font")
+			P("Tamaño del texto", "TextSize")
+			P("Color del texto", "TextColor3")
+			P("Texto con saltos (wrap)", "TextWrapped")
+			P("RichText", "RichText")
+		end
+		if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+			P("Imagen", "Image")
+			P("Color de imagen", "ImageColor3")
+			P("Transparencia de imagen", "ImageTransparency")
+			P("Escala de imagen", "ScaleType")
+		end
+		if obj:IsA("ScrollingFrame") then
+			P("Tamaño del canvas", "CanvasSize")
+			P("Posición del canvas", "CanvasPosition")
+		end
+	end
+
+	if obj:IsA("ScreenGui") then
+		H("ScreenGui")
+		P("Habilitada", "Enabled")
+		P("DisplayOrder", "DisplayOrder")
+		P("Reiniciar al reaparecer", "ResetOnSpawn")
+		P("Ignora el inset", "IgnoreGuiInset")
+	end
+
+	if obj:IsA("Humanoid") then
+		H("Humanoid")
+		P("Vida", "Health")
+		P("Vida máxima", "MaxHealth")
+		P("Velocidad al caminar", "WalkSpeed")
+		P("Fuerza de salto", "JumpPower")
+		P("Altura de salto", "JumpHeight")
+		P("Altura de cadera", "HipHeight")
+		P("Tipo de rig", "RigType")
+		P("Nombre visible", "DisplayName")
+		P("Material del suelo", "FloorMaterial")
+	end
+
+	if obj:IsA("Sound") then
+		H("Sonido")
+		P("SoundId", "SoundId")
+		P("Volumen", "Volume")
+		P("Reproduciendo", "Playing")
+		P("Posición de tiempo", "TimePosition")
+		P("Duración", "TimeLength")
+		P("En bucle", "Looped")
+	end
+
+	if obj:IsA("Light") then
+		H("Luz")
+		P("Brillo", "Brightness")
+		P("Color", "Color")
+		P("Habilitada", "Enabled")
+		P("Sombras", "Shadows")
+		if obj:IsA("PointLight") or obj:IsA("SpotLight") then P("Rango", "Range") end
+	end
+
+	if obj:IsA("Decal") or obj:IsA("Texture") then
+		H("Calcomanía / Textura")
+		P("Textura", "Texture")
+		P("Cara", "Face")
+		P("Transparencia", "Transparency")
+		P("Color", "Color3")
+	end
+
+	if obj:IsA("ProximityPrompt") then
+		H("ProximityPrompt")
+		P("Texto de acción", "ActionText")
+		P("Texto del objeto", "ObjectText")
+		P("Tiempo de pulsación", "HoldDuration")
+		P("Distancia máxima", "MaxActivationDistance")
+		P("Tecla", "KeyboardKeyCode")
+		P("Habilitado", "Enabled")
+	end
+
+	if obj:IsA("ClickDetector") then
+		H("ClickDetector")
+		P("Distancia máxima", "MaxActivationDistance")
+	end
+
+	if obj:IsA("ValueBase") then
+		H("Valor")
+		P("Valor", "Value")
+	end
+
+	if obj:IsA("LuaSourceContainer") then
+		H("Script")
+		P("Deshabilitado", "Disabled")
+		P("Contexto de ejecución", "RunContext")
+	end
+
+	if obj:IsA("Tool") then
+		H("Herramienta")
+		P("Puede soltarse", "CanBeDropped")
+		P("Requiere mango", "RequiresHandle")
+		P("Habilitada", "Enabled")
+		P("Tooltip", "ToolTip")
+	end
+
+	if obj:IsA("ParticleEmitter") then
+		H("Partículas")
+		P("Habilitado", "Enabled")
+		P("Tasa", "Rate")
+		P("Vida", "Lifetime")
+		P("Textura", "Texture")
+	end
+
+	if obj:IsA("Attachment") then
+		H("Attachment")
+		P("Posición local", "Position")
+		P("Posición en el mundo", "WorldPosition")
+	end
+
+	if obj:IsA("JointInstance") or obj:IsA("Constraint") then
+		H("Unión / Restricción")
+		P("Part0", "Part0")
+		P("Part1", "Part1")
+		P("Habilitada", "Enabled")
+	end
+
+	local children = obj:GetChildren()
+	H("Hijos (primeros 15)")
+	if #children == 0 then
+		K("Hijos", "ninguno")
+	else
+		for i, c in ipairs(children) do
+			if i > 15 then
+				K("…", "y " .. (#children - 15) .. " más")
+				break
+			end
+			K(i, describe(c))
+		end
+	end
+
+	H("Jerarquía (de dentro hacia fuera)")
+	local a, depth = obj.Parent, 0
+	while a and depth < 12 do
+		depth = depth + 1
+		K(depth, describe(a))
+		a = a.Parent
+	end
+
+	return L
+end
+
+--------------------------------------------------
+-- SELECCIÓN
+--------------------------------------------------
+
+local sel = nil
+
+local function isOverMine(pos)
+	local inset = GuiService:GetGuiInset()
+	local raw = pos + inset
+	local function inside(gui)
+		if not gui.Visible then return false end
+		local p, sz = gui.AbsolutePosition, gui.AbsoluteSize
+		return raw.X >= p.X and raw.X <= p.X + sz.X and raw.Y >= p.Y and raw.Y <= p.Y + sz.Y
+	end
+	return inside(Main) or inside(Dots) or inside(Popup) or inside(NameLabel)
+end
+
+clearSelection = function()
+	if sel then
+		for _, c in ipairs(sel.conns) do c:Disconnect() end
+	end
+	sel = nil
+	Highlight3D.Adornee = nil
+	EspBox.Visible = false
+	Dots.Visible = false
+	NameLabel.Visible = false
+	Popup.Visible = false
+end
+
+local function stamp()
+	return os.date("%d/%m/%Y %H:%M:%S")
+end
+
+local function selectInstance(inst, kind, hitPos)
+	if sel and sel.inst == inst then return end
+	clearSelection()
+
+	local s = {
+		inst = inst,
+		kind = kind,
+		hitPos = hitPos,
+		conns = {},
+		selectedAt = stamp(),
+		count = 0,
+	}
+	local function noteChange(name)
+		s.count = s.count + 1
+		s.lastName = name
+		s.lastTime = stamp()
+	end
+	table.insert(s.conns, inst.Changed:Connect(function(prop) noteChange(tostring(prop)) end))
+	table.insert(s.conns, inst.ChildAdded:Connect(function(c) noteChange("ChildAdded (" .. c.Name .. ")") end))
+	table.insert(s.conns, inst.ChildRemoved:Connect(function(c) noteChange("ChildRemoved (" .. c.Name .. ")") end))
+	sel = s
+
+	if kind == "obj" and inst:IsA("BasePart") and not inst:IsA("Terrain") then
+		Highlight3D.Adornee = inst
+	end
+
+	NameLabel.Text = inst.Name .. "  [" .. inst.ClassName .. "]"
+	Dots.Visible = true
+	NameLabel.Visible = true
+	EspBox.Visible = kind == "gui"
+	updateStatus()
+end
+
+local function topGuiObjectAt(pos)
+	local pg = Player:FindFirstChildOfClass("PlayerGui")
+	local sources = {}
+	if pg then table.insert(sources, pg) end
+	local ok, cg = pcall(function() return game:GetService("CoreGui") end)
+	if ok and cg then table.insert(sources, cg) end
+
+	for _, src in ipairs(sources) do
+		local okc, list = pcall(function() return src:GetGuiObjectsAtPosition(pos.X, pos.Y) end)
+		if okc and list then
+			for _, g in ipairs(list) do
+				if not g:IsDescendantOf(Root) then
+					return g
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function handleTap(pos, processedAtStart)
+	if not mode then return end
+	if isOverMine(pos) then return end
+
+	if mode == "obj" then
+		if processedAtStart then return end
+		local cam = workspace.CurrentCamera or Camera
+		local ray = cam:ScreenPointToRay(pos.X, pos.Y)
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = { Player.Character }
+		local res = workspace:Raycast(ray.Origin, ray.Direction * 3000, params)
+		if res and res.Instance then
+			selectInstance(res.Instance, "obj", res.Position)
+		else
+			clearSelection()
+		end
+	else
+		local g = topGuiObjectAt(pos)
+		if g then
+			selectInstance(g, "gui")
+		else
+			clearSelection()
+		end
+	end
+end
+
+local tapInput, tapPos, tapTime, tapProcessed
+
+track(UserInputService.InputBegan:Connect(function(input, processed)
+	if not isPointer(input) then return end
+	if tapInput then return end
+	tapInput = input
+	tapPos = Vector2.new(input.Position.X, input.Position.Y)
+	tapTime = os.clock()
+	tapProcessed = processed
+end))
+
+track(UserInputService.InputEnded:Connect(function(input)
+	if not tapInput then return end
+	local same = input == tapInput
+		or (input.UserInputType == Enum.UserInputType.MouseButton1 and tapInput.UserInputType == Enum.UserInputType.MouseButton1)
+	if not same then return end
+
+	local startPos2, started, processed = tapPos, tapTime, tapProcessed
+	tapInput = nil
+
+	local endPos = Vector2.new(input.Position.X, input.Position.Y)
+	if (endPos - startPos2).Magnitude < 12 and (os.clock() - started) < 0.7 then
+		handleTap(startPos2, processed)
+	end
+end))
+
+--------------------------------------------------
+-- ACCIONES DEL MENÚ EMERGENTE
+--------------------------------------------------
+
+updateStatus = function()
+	local label = mode == "gui" and "Interfaces" or (mode == "obj" and "Objetos" or "apagado")
+	local selText = sel and ("  •  Seleccionado: " .. sel.inst.Name) or ""
+	StatusLabel.Text = "Modo: " .. label .. "  •  Ocultos: " .. hiddenCount() .. selText
+end
+
+track(Dots.MouseButton1Click:Connect(function()
+	if not sel then return end
+	if Popup.Visible then
+		Popup.Visible = false
+		return
+	end
+	HideBtn.Text = hidden[sel.inst] and "👁 Restaurar objeto" or "🚫 Hacer invisible / ignorar"
+	Popup.Visible = true
+end))
+
+track(HideBtn.MouseButton1Click:Connect(function()
+	if not sel then return end
+	local inst = sel.inst
+	if hidden[inst] then
+		showObject(inst)
+	else
+		local ok, msg = hideObject(inst)
+		if not ok then
+			StatusLabel.Text = msg or "No se pudo ocultar."
+			Popup.Visible = false
+			return
+		end
+	end
+	Popup.Visible = false
+	updateStatus()
+end))
+
+track(InfoBtn.MouseButton1Click:Connect(function()
+	if not sel then return end
+	local inst = sel.inst
+	local lines = collectInfo(inst, sel)
+	local entry = {
+		kind = "info",
+		inst = inst,
+		title = inst.Name .. " (" .. inst.ClassName .. ")",
+		time = os.date("%H:%M:%S"),
+		lines = lines,
+	}
+	if current and current.kind == "info" and current.inst == inst then
+		current.lines = lines
+		current.time = entry.time
+		renderLines(lines)
+		showView("console")
+	else
+		setCurrent(entry)
+	end
+	Popup.Visible = false
+end))
+
+track(RestoreBtn.MouseButton1Click:Connect(function()
+	restoreAll()
+	updateStatus()
+end))
+
+track(ClearBtn.MouseButton1Click:Connect(function()
+	history = {}
+	current = nil
+	refreshHistoryButton()
+	renderLines(welcomeLines())
+	renderHistory()
+	showView("console")
+end))
+
+--------------------------------------------------
+-- ACTUALIZACIÓN POR CUADRO (ESP + 3 PUNTOS)
+--------------------------------------------------
+
+track(RunService.RenderStepped:Connect(function()
+	if not sel then return end
+	local inst = sel.inst
+	if not inst.Parent then
+		clearSelection()
+		updateStatus()
+		return
+	end
+
+	local cam = workspace.CurrentCamera or Camera
+	local vp = cam.ViewportSize
+	local px, py, visible
+
+	if sel.kind == "obj" then
+		local worldPos
+		if inst:IsA("BasePart") and not inst:IsA("Terrain") then
+			worldPos = inst.Position + Vector3.new(0, inst.Size.Y / 2 + 1.2, 0)
+		else
+			worldPos = (sel.hitPos or Vector3.zero) + Vector3.new(0, 3, 0)
+		end
+		local v, onScreen = cam:WorldToViewportPoint(worldPos)
+		visible = onScreen and v.Z > 0
+		px, py = v.X, v.Y
+	else
+		local ap, asz = inst.AbsolutePosition, inst.AbsoluteSize
+		EspBox.Position = UDim2.fromOffset(ap.X, ap.Y)
+		EspBox.Size = UDim2.fromOffset(asz.X, asz.Y)
+		px = ap.X + asz.X / 2
+		py = ap.Y - 4
+		visible = true
+	end
+
+	Dots.Visible = visible
+	NameLabel.Visible = visible
+	if not visible then
+		Popup.Visible = false
+		return
+	end
+
+	px = math.clamp(px, 20, vp.X - 20)
+	py = math.clamp(py, 52, vp.Y - 10)
+	Dots.Position = UDim2.fromOffset(px, py)
+	NameLabel.Position = UDim2.fromOffset(math.min(px + 20, vp.X - 160), py)
+
+	if Popup.Visible then
+		Popup.Position = UDim2.fromOffset(math.clamp(px, 110, vp.X - 110), math.min(py + 8, vp.Y - 100))
+	end
+end))
+
+--------------------------------------------------
+-- CERRAR / LIMPIEZA
+--------------------------------------------------
+
+local function cleanup()
+	for _, c in ipairs(connections) do pcall(function() c:Disconnect() end) end
+	connections = {}
+	pcall(clearSelection)
+	pcall(restoreAll)
+	pcall(function() Root:Destroy() end)
+end
+
+_G.AdminObjetosCleanup = cleanup
+
+track(CloseBtn.MouseButton1Click:Connect(function()
+	_G.AdminObjetosCleanup = nil
+	cleanup()
+end))
+
+renderLines(welcomeLines())
+updateStatus()
